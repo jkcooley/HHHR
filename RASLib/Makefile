@@ -3,14 +3,15 @@ TARGET = output/libras.a
 
 # Library Locations
 RASLIB = ../RASLib
-STELLARIS = /usr/local/lib/StellarisWare
-CORTEXM4 = /usr/local/lib/CortexM4Libs
+STELLARIS = ../../StellarisWare
+CORTEXM4 = ../../CortexM4Libs
 ARMCLIB = $(dir $(shell which $(CC)))..
 GDBSCRIPT = $(RASLIB)/gdb-script
 
 # Command Definitions
-PREFIX = arm-none-eabi-
+PREFIX := ../../gcc-arm-none-eabi-*/bin/arm-none-eabi-
 
+AR := $(PREFIX)ar
 CC := $(PREFIX)gcc
 LD := $(PREFIX)ld
 OBJCOPY := $(PREFIX)objcopy
