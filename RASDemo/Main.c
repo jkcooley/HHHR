@@ -13,8 +13,14 @@ void blink(void) {
     led_on = !led_on;
 }
 
-int main(void) {  
-    char ch;
+int main(void) {
+
+CallEvery(blink, 0, 0.25f);
+
+ initMotors();
+// motorDemo();
+  
+/*    char ch;
 
     CallEvery(blink, 0, 0.25f);
 
@@ -80,5 +86,5 @@ int main(void) {
                 sonarDemo();
                 break;
         }
-    }
+    }*/
 }
