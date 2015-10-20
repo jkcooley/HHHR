@@ -15,10 +15,23 @@ void initMotors(void) {
       Motors[2] = InitializeServoMotor(PIN_C4, false);
       Motors[3] = InitializeServoMotor(PIN_C5, false);
     }
+
+float left = 0, right = 0, speed = 0.75f, accel = 0.01f;
+
+left = speed;
+right = speed;
+
+ SetMotor(Motors[0], left);
+        SetMotor(Motors[1], left);
+        SetMotor(Motors[2], right);
+        SetMotor(Motors[3], right);
+        Printf(" set motor to %1.2f %1.2f  \r", left, right);
+
+
 }
 
 
-void motorDemo(void) {
+/*void motorDemo(void) {
     float left = 0, right = 0, speed = 0.75f, accel = 0.01f;
     char ch;    
     int i;
@@ -91,4 +104,4 @@ void motorDemo(void) {
     for (i = 0; i < 4; ++i) 
       SetMotor(Motors[i], 0);
     Printf("\n");
-}
+}*/
