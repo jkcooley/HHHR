@@ -1,4 +1,4 @@
-#include "RasTemp.h"
+#include "RASTemp.h"
 
 #include <RASLib/inc/common.h>
 #include <RASLib/inc/motor.h>
@@ -9,13 +9,13 @@
 tBoolean led_on;
 static tMotor *Motors[4];
 static tBoolean initialized = false;
-static tADC *adc;
+static tADC *adc[4];
 
 void blink(void) {
-    SetPin(PIN_F1, true);
-    SetPin(PIN_F2, false);
+    SetPin(PIN_F1, led_on);
+    SetPin(PIN_F3, !led_on);
 
-    //led_on = !led_on;
+    led_on = !led_on;
 }
 
 void initMotors(void) {
@@ -27,46 +27,49 @@ void initMotors(void) {
       Motors[2] = InitializeServoMotor(PIN_C4, false);
       Motors[3] = InitializeServoMotor(PIN_C5, false);
    
-      adc = InitializeADC(PIN_D0);
+      adc[0] = InitializeADC(PIN_D0);
+      adc[1] = InitializeADC(PIN_D1);
+      adc[2] = InitializeADC(PIN_D2);
+      adc[3] = InitializeADC(PIN_D3);
     }
 }
 
 int main(void) { 
-    // float distance = 0.0f;
-     blink();
      Printf("\nMotor Demo\n");
      initMotors();
-     irrun();
-     circle();
+	circle();
      runMotor();
 }
 
 
 void irrun(void){
-//	int t=0;
-        float distance = 0.0f;	
-	while(1){
+	int t=0;
+	while(t==0){
 	Printf(
 	    "IR values:  %1.3f  %1.3f  %1.3f  %1.3f\r",
-            ADCRead(adc)
+            ADCRead(adc[0]),
+            ADCRead(adc[1]),
+            ADCRead(adc[2]),
+            ADCRead(adc[3])
 	);
-	distance = ADCRead(adc);
-	if(distance < .5f)
-		blink();
-	else
-	{
-		SetPin(PIN_F1, false);
-		SetPin(PIN_F2, true);
-	}
-	}
 
-// > 1 always red
-// < 0 always blue
-// > .99f irregular blinking
-// < .99f blinking too fast to really see
-// = 1 always red
-//hardware issue??? 	
+	if(ADCRead(adc[0]) < 0)
+		blink();
+	}	
 }
+
+
+
+void irr(void){
+	float dist=0.5f;
+	while(1){
+		if(ADCRead(adc[0]) < dist)
+			runMotor();
+		else
+			stopMotors();
+	}
+}
+ 
 
 
 
@@ -187,93 +190,96 @@ void stopMotors(void){
         SetMotor(Motors[3], right);
 }
 
-//void motorDemo(void) {
-//    float left = 0, right = 0, speed = 0.75f, accel = 0.01f;
-//    char ch;    
-//    int i;
-//
-//    Printf("Press:\n"
-//	   "  w-forward\n"
-//	   "  s-backward\n"
-//	   "  a-left\n"
-//	   "  d-right\n"    
-//           "  i-slowly forward\n"
-//	   "  k-slowly backward\n"
-//	   "  j-slowly left\n"
-//	   "  l-slowly right\n"    
-//           "  space-stop\n"
-//	   "  enter-quit\n");
-//  
-//    // wait for the user to enter a character
-//    ch = ' ';
-//    
-//    while (ch != '\n') {
-//        switch (ch) {
-//            case 'w':
-//                left = speed;
-//                right = speed;
-//                break;
-//            case 's':
-//                left = -speed;
-//                right = -speed;
-//                break;
-//            case 'a':
-//                left = -speed;
-//                right = speed;
-//                break;
-//            case 'd':
-//                left = speed;
-//                right = -speed;
-//                break;
-//            case 'i':
-//                right += accel;
-//                left += accel;
-//                break;
-//            case 'k':
-//                right -= accel;
-//                left -= accel;
-//                break;
-//            case 'j':
-//                right -= accel;
-//                left += accel;
-//                break;
-//            case 'l':
-//                right += accel;
-//                left -= accel;
-//                break;
-//            default:
-//                left = 0; 
-//                right = 0;
-//                break;
-//        }
-//
-//        SetMotor(Motors[0], left);
-//        SetMotor(Motors[1], left);
-//        SetMotor(Motors[2], right);
-//        SetMotor(Motors[3], right);
-//        Printf(" set motor to %1.2f %1.2f  \r", left, right);
-//        
-//        ch = Getc();
-//    } 
-//   
-//    // make sure the motors are off before exiting the demo 
-//    for (i = 0; i < 4; ++i) 
-//      SetMotor(Motors[i], 0);
-//    Printf("\n");
-//}
-//
-//
-//void initIRSensor(void) {
-//    // don't initialize this if we've already done so
-//    if (initialized) {
-//        return;
-//    }
-//    
-//    initialized = true;
-//
-//    // initialize 4 pins to be used for ADC input
-//    adc[0] = InitializeADC(PIN_D0);
-//}
-//
+void motorDemo(void) {
+    float left = 0, right = 0, speed = 0.75f, accel = 0.01f;
+    char ch;    
+    int i;
+
+    Printf("Press:\n"
+	   "  w-forward\n"
+	   "  s-backward\n"
+	   "  a-left\n"
+	   "  d-right\n"    
+           "  i-slowly forward\n"
+	   "  k-slowly backward\n"
+	   "  j-slowly left\n"
+	   "  l-slowly right\n"    
+           "  space-stop\n"
+	   "  enter-quit\n");
+  
+    // wait for the user to enter a character
+    ch = ' ';
+    
+    while (ch != '\n') {
+        switch (ch) {
+            case 'w':
+                left = speed;
+                right = speed;
+                break;
+            case 's':
+                left = -speed;
+                right = -speed;
+                break;
+            case 'a':
+                left = -speed;
+                right = speed;
+                break;
+            case 'd':
+                left = speed;
+                right = -speed;
+                break;
+            case 'i':
+                right += accel;
+                left += accel;
+                break;
+            case 'k':
+                right -= accel;
+                left -= accel;
+                break;
+            case 'j':
+                right -= accel;
+                left += accel;
+                break;
+            case 'l':
+                right += accel;
+                left -= accel;
+                break;
+            default:
+                left = 0; 
+                right = 0;
+                break;
+        }
+
+        SetMotor(Motors[0], left);
+        SetMotor(Motors[1], left);
+        SetMotor(Motors[2], right);
+        SetMotor(Motors[3], right);
+        Printf(" set motor to %1.2f %1.2f  \r", left, right);
+        
+        ch = Getc();
+    } 
+   
+    // make sure the motors are off before exiting the demo 
+    for (i = 0; i < 4; ++i) 
+      SetMotor(Motors[i], 0);
+    Printf("\n");
+}
+
+
+void initIRSensor(void) {
+    // don't initialize this if we've already done so
+    if (initialized) {
+        return;
+    }
+    
+    initialized = true;
+
+    // initialize 4 pins to be used for ADC input
+    adc[0] = InitializeADC(PIN_D0);
+    adc[1] = InitializeADC(PIN_D1);
+    adc[2] = InitializeADC(PIN_D2);
+    adc[3] = InitializeADC(PIN_D3);
+}
+
 
 
