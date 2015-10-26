@@ -1,16 +1,18 @@
 #include "RASTemp.h"
-
 #include <RASLib/inc/common.h>
 #include <RASLib/inc/motor.h>
 #include <RASLib/inc/gpio.h>
 #include <RASLib/inc/time.h>
 #include <RASLib/inc/adc.h>
+#include <RASLib/inc/linesensor.h>
 
 tBoolean led_on;
 static tMotor *Motors[4];
 static tBoolean initialized = false;
 static tADC *adc[4];
+static tLineSensor *gls;
 
+//Flashes blue and red LEDs
 void blink(void) {
     SetPin(PIN_F1, led_on);
     SetPin(PIN_F3, !led_on);
@@ -18,7 +20,21 @@ void blink(void) {
     led_on = !led_on;
 }
 
-void initMotors(void) {
+
+//Turns on Red LED
+void ledRed(void){
+	setPin(PIN_F1,true);
+	setPin(PIN_F3, false);
+}
+
+//Turns on Blue LED
+void ledBlue(void){
+	setPin(PIN_F1,false);
+	setPin(PIN_F3, true);
+}
+
+//Initializes motors and IR Sebsors
+void initMotorsSensors(void) {
     if (!initialized) {
       initialized = true;
       
@@ -31,20 +47,55 @@ void initMotors(void) {
       adc[1] = InitializeADC(PIN_D1);
       adc[2] = InitializeADC(PIN_D2);
       adc[3] = InitializeADC(PIN_D3);
+
+      gls = InitializeGPIOLineSensor(
+        PIN_B5, 
+        PIN_D0, 
+        PIN_D1, 
+        PIN_D2, 
+        PIN_D3, 
+        PIN_E0, 
+        PIN_C6, 
+        PIN_C7
+        );
     }
 }
 
+
+
 int main(void) { 
-     Printf("\nMotor Demo\n");
-     initMotors();
-	circle();
+     Printf("\nRunningo\n");
+     blink();   //turn on one led
+     initMotorsSensors(); //initialize all
      runMotor();
+     irrun(); //motor-sensor pairing
+     while(1){
+	wallfollow(.15f);
+     }
+   // runMotor();	
+   // irr();	
+   // circle();
+   // runMotor();
 }
 
+//follows wall with set distance d
+void wallfollow(int d){
+	int t=ADCRead(adc[0]);
+	if(t<d){
+		setm(.25f,.75f);
+	}
+	else if(t==d){
+		setm(.5f,.5f);
+	}
+	else{
+		setm(.75f,.25f);
+	}
+}
 
+//Flashes LED for certain IR values
 void irrun(void){
 	int t=0;
-	while(t==0){
+	while(1){
 	Printf(
 	    "IR values:  %1.3f  %1.3f  %1.3f  %1.3f\r",
             ADCRead(adc[0]),
@@ -59,7 +110,7 @@ void irrun(void){
 }
 
 
-
+//Runs motors if IR returns values less than constant dist
 void irr(void){
 	float dist=0.5f;
 	while(1){
@@ -69,12 +120,10 @@ void irr(void){
 			stopMotors();
 	}
 }
- 
 
-
-
+//Turns on all motors equallt
 void runMotor(void){
-	float left = 0, right = 0, speed = .95f, accel = .01f;
+	float left = 0, right = 0, speed = .75f, accel = .01f;
 	left = speed;
 	right = speed;
 	SetMotor(Motors[0], left);
@@ -83,7 +132,7 @@ void runMotor(void){
 	SetMotor(Motors[3], right);
 }
 
-
+//Some messed up shape
 void circle(void){	
 	float left = 0, right = 0, speed = .75f, accel = .01f;
 	left = speed;
@@ -122,6 +171,8 @@ void circle(void){
 	}
 }
 
+
+//Moves in previously set direction for certain amount of time
 void go(int t){
 	while(t>0){
 		t--;
@@ -129,6 +180,8 @@ void go(int t){
 	}
 }
 
+
+//Creates a figure 8 pattern
 void figeight(int k){	
 	float left = 0, right = 0, speed = .75f, accel = .01f;
 	left=speed;
@@ -172,7 +225,7 @@ void figeight(int k){
 	}
 }
 
-
+//Set motors with left and right variables
 void setm(float left, float right){
 	
 	SetMotor(Motors[0], left);
@@ -181,7 +234,7 @@ void setm(float left, float right){
 	SetMotor(Motors[3], right);
 }
 
-
+//Stop all motors
 void stopMotors(void){
 	float left = 0, right = 0;
         SetMotor(Motors[0], left);
@@ -190,96 +243,25 @@ void stopMotors(void){
         SetMotor(Motors[3], right);
 }
 
-void motorDemo(void) {
-    float left = 0, right = 0, speed = 0.75f, accel = 0.01f;
-    char ch;    
-    int i;
-
-    Printf("Press:\n"
-	   "  w-forward\n"
-	   "  s-backward\n"
-	   "  a-left\n"
-	   "  d-right\n"    
-           "  i-slowly forward\n"
-	   "  k-slowly backward\n"
-	   "  j-slowly left\n"
-	   "  l-slowly right\n"    
-           "  space-stop\n"
-	   "  enter-quit\n");
+void gpioLineSensorDemo(void) {
+    Printf("Press any key to quit\n");
   
-    // wait for the user to enter a character
-    ch = ' ';
-    
-    while (ch != '\n') {
-        switch (ch) {
-            case 'w':
-                left = speed;
-                right = speed;
-                break;
-            case 's':
-                left = -speed;
-                right = -speed;
-                break;
-            case 'a':
-                left = -speed;
-                right = speed;
-                break;
-            case 'd':
-                left = speed;
-                right = -speed;
-                break;
-            case 'i':
-                right += accel;
-                left += accel;
-                break;
-            case 'k':
-                right -= accel;
-                left -= accel;
-                break;
-            case 'j':
-                right -= accel;
-                left += accel;
-                break;
-            case 'l':
-                right += accel;
-                left -= accel;
-                break;
-            default:
-                left = 0; 
-                right = 0;
-                break;
-        }
-
-        SetMotor(Motors[0], left);
-        SetMotor(Motors[1], left);
-        SetMotor(Motors[2], right);
-        SetMotor(Motors[3], right);
-        Printf(" set motor to %1.2f %1.2f  \r", left, right);
-        
-        ch = Getc();
-    } 
+    // loop as long as the user doesn't press a key 
+    while (!KeyWasPressed()) {
+        int i;
+        float line[8];
    
-    // make sure the motors are off before exiting the demo 
-    for (i = 0; i < 4; ++i) 
-      SetMotor(Motors[i], 0);
-    Printf("\n");
-}
-
-
-void initIRSensor(void) {
-    // don't initialize this if we've already done so
-    if (initialized) {
-        return;
-    }
+        // put the values of the line sensor into the 'line' array 
+        LineSensorReadArray(gls, line);
+        Printf("Line Sensor: [");
     
-    initialized = true;
-
-    // initialize 4 pins to be used for ADC input
-    adc[0] = InitializeADC(PIN_D0);
-    adc[1] = InitializeADC(PIN_D1);
-    adc[2] = InitializeADC(PIN_D2);
-    adc[3] = InitializeADC(PIN_D3);
+        for (i = 0; i < 8; i++) {
+            Printf("%.2f ", line[i]);
+        }
+    
+        Printf("\b]        \r");
+    }
+  
+    Printf("\n"); 
 }
-
-
 
