@@ -67,8 +67,8 @@ int main(void) {
      Printf("\nRunningo\n");
      blink();   //turn on one led
      initMotorsSensors(); //initialize all
-     runMotor();
-     irrun(); //motor-sensor pairing
+    // runMotor();
+     irr(); //motor-sensor pairing
      while(1){
 	wallfollow(.15f);
      }
@@ -112,9 +112,9 @@ void irrun(void){
 
 //Runs motors if IR returns values less than constant dist
 void irr(void){
-	float dist=0.5f;
+	float dist= 800.0f;
 	while(1){
-		if(ADCRead(adc[0]) < dist)
+		if(72 / ADCRead(adc[0]) < dist)
 			runMotor();
 		else
 			stopMotors();
